@@ -1,4 +1,5 @@
 const { Client, Collection, GatewayIntentBits, ActivityType } = require('discord.js');
+const { joinVoiceChannel } = require('@discordjs/voice');
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
@@ -110,6 +111,23 @@ client.on('interactionCreate', async (interaction) => {
       await interaction.reply(reply).catch(() => {});
     }
   }
+});
+
+client.on('voiceStateUpdate', (oldState, newState) => {
+  if (newState.id !== client.user.id) return;
+  if (!newState.channelId || newState.channelId === oldState.channelId) return;
+
+  const queue = queues.get(newState.guild.id);
+  if (!queue) return;
+
+  const conn = joinVoiceChannel({
+    channelId: newState.channelId,
+    guildId: newState.guild.id,
+    adapterCreator: newState.guild.voiceAdapterCreator,
+    selfDeaf: true,
+  });
+  conn.subscribe(queue.player);
+  queue.connection = conn;
 });
 
 client.login(process.env.DISCORD_TOKEN);
