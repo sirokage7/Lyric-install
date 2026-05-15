@@ -1,0 +1,20 @@
+{
+  "name": "lyric-bot",
+  "version": "1.0.0",
+  "description": "Discord music bot - Lyric",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "deploy": "node deploy-commands.js"
+  },
+  "dependencies": {
+    "@discordjs/voice": "^0.19.2",
+    "discord.js": "^14.15.0",
+    "dotenv": "^16.4.5",
+    "ffmpeg-static": "^5.2.0",
+    "opusscript": "^0.0.8",
+    "play-dl": "^1.9.7",
+    "tweetnacl": "^1.0.3",
+    "youtube-dl-exec": "^3.1.6"
+  }
+}

@@ -1,0 +1,91 @@
+const { SlashCommandBuilder } = require('discord.js');
+const youtubedl = require('youtube-dl-exec');
+const { MusicQueue, Song } = require('../utils/MusicQueue');
+const queues = require('../utils/queues');
+
+const playOption = (builder) =>
+  builder
+    .addStringOption((o) =>
+      o.setName('제목_또는_링크').setDescription('재생하실 노래의 제목 또는 URL을 입력해주세요.').setRequired(true),
+    )
+    .addBooleanOption((o) =>
+      o.setName('셔플').setDescription('기존 대기열과 합친 뒤 무작위로 섞어요!').setRequired(false),
+    );
+
+module.exports = {
+  data: [
+    playOption(new SlashCommandBuilder().setName('play').setDescription('The command to play music!')),
+    playOption(new SlashCommandBuilder().setName('재생').setDescription('노래를 재생하는 명령어에요!')),
+  ],
+
+  async execute(interaction) {
+    await interaction.deferReply();
+
+    const voiceChannel = interaction.member?.voice?.channel;
+    if (!voiceChannel) {
+      return interaction.editReply('🔇 먼저 음성 채널에 입장해 주세요!');
+    }
+
+    const perms = voiceChannel.permissionsFor(interaction.client.user);
+    if (!perms?.has('Connect') || !perms?.has('Speak')) {
+      return interaction.editReply('❌ 해당 채널에 접속하거나 말할 권한이 없어요.');
+    }
+
+    const query = interaction.options.getString('제목_또는_링크');
+    const isUrl = /^https?:\/\//.test(query);
+
+    let videoInfo;
+    try {
+      const raw = await youtubedl(isUrl ? query : `ytsearch1:${query}`, {
+        dumpSingleJson: true,
+        noWarnings: true,
+        quiet: true,
+        ...(isUrl ? { noPlaylist: true } : {}),
+      });
+      videoInfo = raw.entries?.[0] ?? raw;
+    } catch (err) {
+      console.error('[Lyric] 검색 오류:', err.message);
+      return interaction.editReply('❌ 노래 검색 중 오류가 발생했어요.');
+    }
+
+    if (!videoInfo) return interaction.editReply('🔍 검색 결과가 없어요!');
+
+    const song = new Song({
+      title: videoInfo.title ?? '제목 없음',
+      url: videoInfo.id
+        ? `https://www.youtube.com/watch?v=${videoInfo.id}`
+        : (videoInfo.webpage_url ?? videoInfo.url),
+      duration: videoInfo.duration,
+      thumbnail: videoInfo.thumbnail ?? null,
+      requestedBy: `<@${interaction.user.id}>`,
+      channelName: videoInfo.uploader ?? videoInfo.channel ?? '알 수 없음',
+    });
+
+    const guildId = interaction.guildId;
+    if (!queues.has(guildId)) queues.set(guildId, new MusicQueue(guildId));
+
+    const queue = queues.get(guildId);
+    queue.textChannel = interaction.channel;
+
+    if (!queue.connection) {
+      try {
+        await queue.join(voiceChannel);
+      } catch (err) {
+        queues.delete(guildId);
+        return interaction.editReply('❌ 음성 채널 연결에 실패했어요.');
+      }
+    }
+
+    await queue.addSong(song);
+
+    if (interaction.options.getBoolean('셔플') && queue.songs.length > 1) {
+      for (let i = queue.songs.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [queue.songs[i], queue.songs[j]] = [queue.songs[j], queue.songs[i]];
+      }
+      await queue.updateNowPlaying();
+    }
+
+    return interaction.deleteReply();
+  },
+};
