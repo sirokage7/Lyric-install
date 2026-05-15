@@ -113,21 +113,42 @@ client.on('interactionCreate', async (interaction) => {
   }
 });
 
-client.on('voiceStateUpdate', (oldState, newState) => {
-  if (newState.id !== client.user.id) return;
-  if (!newState.channelId || newState.channelId === oldState.channelId) return;
+client.on('voiceStateUpdate', async (oldState, newState) => {
+  // 봇이 다른 채널로 이동됐을 때
+  if (newState.id === client.user.id) {
+    if (!newState.channelId || newState.channelId === oldState.channelId) return;
+    const queue = queues.get(newState.guild.id);
+    if (!queue) return;
+    const conn = joinVoiceChannel({
+      channelId: newState.channelId,
+      guildId: newState.guild.id,
+      adapterCreator: newState.guild.voiceAdapterCreator,
+      selfDeaf: true,
+    });
+    conn.subscribe(queue.player);
+    queue.connection = conn;
+    return;
+  }
 
-  const queue = queues.get(newState.guild.id);
-  if (!queue) return;
+  // 유저가 채널을 나갔을 때 봇만 남았는지 확인
+  if (!oldState.channelId) return;
+  const queue = queues.get(oldState.guild.id);
+  if (!queue?.connection) return;
 
-  const conn = joinVoiceChannel({
-    channelId: newState.channelId,
-    guildId: newState.guild.id,
-    adapterCreator: newState.guild.voiceAdapterCreator,
-    selfDeaf: true,
-  });
-  conn.subscribe(queue.player);
-  queue.connection = conn;
+  const botChannelId = oldState.guild.members.me?.voice?.channelId;
+  if (!botChannelId || botChannelId !== oldState.channelId) return;
+
+  const humans = oldState.channel?.members.filter((m) => !m.user.bot);
+  if (humans?.size !== 0) return;
+
+  if (queue.npMessage) {
+    await queue.npMessage.delete().catch(() => {});
+    queue.npMessage = null;
+  }
+  if (queue.textChannel) {
+    await queue.textChannel.send({ content: '채널에 아무도 존재하지 않아 플레이어가 자동으로 종료되었어요!' }).catch(() => {});
+  }
+  queue.destroy();
 });
 
 client.login(process.env.DISCORD_TOKEN);
