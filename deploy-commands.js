@@ -16,12 +16,12 @@ const rest = new REST().setToken(process.env.DISCORD_TOKEN);
 
 (async () => {
   try {
-    console.log(`[Lyric] ${commands.length}개의 슬래시 커맨드 등록 중...`);
+    console.log(`[Lyric] ${commands.length}개의 슬래시 커맨드 전역 등록 중...`);
     const data = await rest.put(
-      Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
+      Routes.applicationCommands(process.env.CLIENT_ID),
       { body: commands },
     );
-    console.log(`[Lyric] ${data.length}개 커맨드 등록 완료!`);
+    console.log(`[Lyric] ${data.length}개 커맨드 전역 등록 완료! (반영까지 최대 1시간 소요)`);
   } catch (err) {
     console.error('[Lyric] 커맨드 등록 실패:', err);
   }
