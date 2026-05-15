@@ -159,9 +159,13 @@ class MusicQueue {
 
   _startIdleTimer() {
     this._clearIdleTimer();
-    this._idleTimer = setTimeout(() => {
+    this._idleTimer = setTimeout(async () => {
+      if (this.npMessage) {
+        await this.npMessage.delete().catch(() => {});
+        this.npMessage = null;
+      }
       if (this.textChannel) {
-        this.textChannel.send({ content: '👋 5분동안 아무것도 재생되지 않아 채널에서 나갔어요!' }).catch(() => {});
+        await this.textChannel.send({ content: '👋 5분동안 아무것도 재생되지 않아 채널에서 나갔어요!' }).catch(() => {});
       }
       this.destroy();
     }, 5 * 60 * 1000);
