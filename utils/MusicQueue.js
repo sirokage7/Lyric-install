@@ -229,6 +229,9 @@ class MusicQueue {
           entersState(this.connection, VoiceConnectionStatus.Connecting, 5_000),
         ]);
       } catch {
+        if (this.textChannel) {
+          this.textChannel.send({ content: '👋 음성 채널에서 연결이 끊겼어요!' }).catch(() => {});
+        }
         this.destroy();
       }
     });
