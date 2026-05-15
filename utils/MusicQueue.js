@@ -165,7 +165,7 @@ class MusicQueue {
         this.npMessage = null;
       }
       if (this.textChannel) {
-        await this.textChannel.send({ content: '👋 5분동안 아무것도 재생되지 않아 채널에서 나갔어요!' }).catch(() => {});
+        await this.textChannel.send({ content: '플레이어가 5분동안 비활성화상태여서 자동으로 종료되었어요!' }).catch(() => {});
       }
       this.destroy();
     }, 5 * 60 * 1000);
