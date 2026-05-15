@@ -69,6 +69,11 @@ client.on('interactionCreate', async (interaction) => {
         queue.toggleLoop();
         await queue.updateNowPlaying();
         break;
+      case 'lyric_vol_down':
+      case 'lyric_vol_up':
+      case 'lyric_star':
+        await interaction.followUp({ content: '🔧 개발중인 기능이에요!', ephemeral: true });
+        break;
     }
     return;
   }
