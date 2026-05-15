@@ -159,14 +159,7 @@ class MusicQueue {
 
   _startIdleTimer() {
     this._clearIdleTimer();
-    this._idleTimer = setTimeout(async () => {
-      if (this.textChannel) {
-        await this.textChannel.send({
-          embeds: [new EmbedBuilder()
-            .setColor(0xE74C3C)
-            .setDescription('플레이어가 5분동안 비활성화상태여서 자동으로 종료되었어요!')],
-        });
-      }
+    this._idleTimer = setTimeout(() => {
       this.destroy();
     }, 5 * 60 * 1000);
   }
