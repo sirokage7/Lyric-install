@@ -22,9 +22,7 @@ module.exports = {
     await interaction.deferReply({ ephemeral: true });
 
     const voiceChannel = interaction.member?.voice?.channel;
-    if (!voiceChannel) {
-      return interaction.editReply('🔇 먼저 음성 채널에 입장해 주세요!');
-    }
+    if (!voiceChannel) return interaction.editReply('🔇 먼저 음성 채널에 입장해 주세요!');
 
     const perms = voiceChannel.permissionsFor(interaction.client.user);
     if (!perms?.has('Connect') || !perms?.has('Speak')) {
@@ -33,6 +31,7 @@ module.exports = {
 
     const query = interaction.options.getString('제목_또는_링크');
     const isUrl = /^https?:\/\//.test(query);
+    const isPlaylist = isUrl && /[?&]list=/.test(query);
 
     const guildId = interaction.guildId;
     if (!queues.has(guildId)) queues.set(guildId, new MusicQueue(guildId));
@@ -51,6 +50,45 @@ module.exports = {
 
     if (!queue.currentSong) await queue.showLoading();
 
+    // 재생목록 처리
+    if (isPlaylist) {
+      try {
+        const playlist = await playdl.playlist_info(query, { incomplete: true });
+        if (!playlist?.videos?.length) return interaction.editReply('🔍 재생목록을 가져올 수 없어요.');
+
+        const songs = playlist.videos.map((v) => new Song({
+          title: v.title ?? '제목 없음',
+          url: v.url,
+          duration: v.durationInSec,
+          thumbnail: v.thumbnails?.[0]?.url ?? null,
+          requestedBy: `<@${interaction.user.id}>`,
+          channelName: v.channel?.name ?? '알 수 없음',
+        }));
+
+        if (interaction.options.getBoolean('셔플')) {
+          for (let i = songs.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [songs[i], songs[j]] = [songs[j], songs[i]];
+          }
+        }
+
+        await queue.addSongs(songs);
+
+        return interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(0x2ECC71)
+              .setTitle('📋 재생목록 추가 완료!')
+              .setDescription(`**${playlist.title ?? '재생목록'}**\n${songs.length}곡을 대기열에 추가했어요!`),
+          ],
+        });
+      } catch (err) {
+        console.error('[Lyric] 재생목록 오류:', err.message);
+        return interaction.editReply('❌ 재생목록을 가져오는 중 오류가 발생했어요.');
+      }
+    }
+
+    // 단일 곡 처리
     let song;
     try {
       if (isUrl) {

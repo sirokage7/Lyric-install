@@ -248,6 +248,17 @@ class MusicQueue {
     });
   }
 
+  async addSongs(songs) {
+    this._clearIdleTimer();
+    for (const song of songs) this.songs.push(song);
+    if (this.player.state.status === AudioPlayerStatus.Idle) {
+      await this._next();
+      return true;
+    }
+    await this.updateNowPlaying();
+    return false;
+  }
+
   async addSong(song) {
     this._clearIdleTimer();
     this.songs.push(song);
