@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const playdl = require('play-dl');
 const { MusicQueue, Song } = require('../utils/MusicQueue');
 const queues = require('../utils/queues');
@@ -82,7 +82,7 @@ module.exports = {
       return interaction.editReply('❌ 노래 검색 중 오류가 발생했어요.');
     }
 
-    await queue.addSong(song);
+    const wasIdle = await queue.addSong(song);
 
     if (interaction.options.getBoolean('셔플') && queue.songs.length > 1) {
       for (let i = queue.songs.length - 1; i > 0; i--) {
@@ -90,6 +90,17 @@ module.exports = {
         [queue.songs[i], queue.songs[j]] = [queue.songs[j], queue.songs[i]];
       }
       await queue.updateNowPlaying();
+    }
+
+    if (!wasIdle) {
+      return interaction.editReply({
+        embeds: [
+          new EmbedBuilder()
+            .setColor(0x2ECC71)
+            .setTitle('트랙 추가 완료!')
+            .setDescription(`트랙 **${song.title}** 을 대기열에 추가했어요!`),
+        ],
+      });
     }
 
     return interaction.deleteReply();
