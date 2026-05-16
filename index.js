@@ -27,7 +27,7 @@ function checkVoice(interaction) {
   const botChannel = interaction.guild?.members?.me?.voice?.channel;
   if (!botChannel) return null;
   if (interaction.member?.voice?.channelId === botChannel.id) return null;
-  return `(${botChannel.name})방에 연결된 상태에서만 이 명령어를 사용할 수 있어요!`;
+  return `<#${botChannel.id}>에 연결된 상태에서만 이 명령어를 사용할 수 있어요!`;
 }
 
 client.on('interactionCreate', async (interaction) => {
