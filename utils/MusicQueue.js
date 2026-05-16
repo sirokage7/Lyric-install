@@ -85,14 +85,14 @@ class MusicQueue {
     return new EmbedBuilder()
       .setColor(0x9B59B6)
       .setAuthor({ name: '🎵 Lyric | 음악 재생중...' })
-      .setDescription(`${trackMode}\n**[${song.title}](${song.url})**`)
+      .setDescription(`${trackMode}\n**[${song.title}](${song.url})**\n${'　'.repeat(22)}`)
       .addFields(
-        { name: '노래 길이', value: `　${formatDuration(song.duration)}　`, inline: true },
-        { name: '대기중인 곡', value: `　${this.songs.length}개　`, inline: true },
-        { name: '볼륨', value: `　${this.volume}%　`, inline: true },
-        { name: '반복', value: `　${this.loop === 'single' ? '🔁 한곡반복' : this.loop === 'all' ? '🔁 전체반복' : this.loop === 'autoplay' ? '▶️ 자동재생' : '반복없음'}　`, inline: true },
-        { name: '요청자', value: `　${song.requestedBy}　`, inline: true },
-        { name: '채널명', value: `　${song.channelName}　`, inline: true },
+        { name: '노래 길이', value: formatDuration(song.duration), inline: true },
+        { name: '대기중인 곡', value: `${this.songs.length}개`, inline: true },
+        { name: '볼륨', value: `${this.volume}%`, inline: true },
+        { name: '반복', value: this.loop === 'single' ? '🔁 한곡반복' : this.loop === 'all' ? '🔁 전체반복' : this.loop === 'autoplay' ? '▶️ 자동재생' : '반복없음', inline: true },
+        { name: '요청자', value: song.requestedBy, inline: true },
+        { name: '채널명', value: song.channelName, inline: true },
       )
       .setThumbnail(song.thumbnail ?? null);
   }
