@@ -23,10 +23,11 @@ client.once('clientReady', () => {
   client.user.setActivity('/play 로 음악을 틀어봐요', { type: ActivityType.Listening });
 });
 
-function isInBotChannel(interaction) {
-  const botChannelId = interaction.guild?.members?.me?.voice?.channelId;
-  const userChannelId = interaction.member?.voice?.channelId;
-  return botChannelId && userChannelId === botChannelId;
+function checkVoice(interaction) {
+  const botChannel = interaction.guild?.members?.me?.voice?.channel;
+  if (!botChannel) return null;
+  if (interaction.member?.voice?.channelId === botChannel.id) return null;
+  return `(${botChannel.name})방에 연결된 상태에서만 이 명령어를 사용할 수 있어요!`;
 }
 
 client.on('interactionCreate', async (interaction) => {
@@ -35,9 +36,8 @@ client.on('interactionCreate', async (interaction) => {
     (interaction.isButton() && ['lyric_qm_trash', 'lyric_qm_confirm'].includes(interaction.customId)) ||
     (interaction.isStringSelectMenu() && interaction.customId === 'lyric_qm_select')
   ) {
-    if (!isInBotChannel(interaction)) {
-      return interaction.reply({ content: '⁠(채팅방)방에 연결된 상태에서만 이 명령어를 사용할 수 있어요!', ephemeral: true });
-    }
+    const voiceErr0 = checkVoice(interaction);
+    if (voiceErr0) return interaction.reply({ content: voiceErr0, ephemeral: true });
     const queueManage = require('./commands/queue-manage');
     return queueManage.handleInteraction(interaction);
   }
@@ -50,9 +50,8 @@ client.on('interactionCreate', async (interaction) => {
 
   // 버튼 인터랙션
   if (interaction.isButton()) {
-    if (!isInBotChannel(interaction)) {
-      return interaction.reply({ content: '⁠(채팅방)방에 연결된 상태에서만 이 명령어를 사용할 수 있어요!', ephemeral: true });
-    }
+    const voiceErr1 = checkVoice(interaction);
+    if (voiceErr1) return interaction.reply({ content: voiceErr1, ephemeral: true });
     const queue = queues.get(interaction.guildId);
     if (!queue?.currentSong) {
       return interaction.reply({ content: '❌ 현재 재생 중인 노래가 없어요!', ephemeral: true });
@@ -158,9 +157,8 @@ client.on('interactionCreate', async (interaction) => {
 
   // 셀렉트 메뉴 인터랙션 (다음 곡 선택)
   if (interaction.isStringSelectMenu() && interaction.customId === 'lyric_queue_select') {
-    if (!isInBotChannel(interaction)) {
-      return interaction.reply({ content: '⁠(채팅방)방에 연결된 상태에서만 이 명령어를 사용할 수 있어요!', ephemeral: true });
-    }
+    const voiceErr2 = checkVoice(interaction);
+    if (voiceErr2) return interaction.reply({ content: voiceErr2, ephemeral: true });
     const queue = queues.get(interaction.guildId);
     if (!queue?.currentSong) {
       return interaction.reply({ content: '❌ 현재 재생 중인 노래가 없어요!', ephemeral: true });
