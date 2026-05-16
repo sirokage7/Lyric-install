@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const youtubedl = require('youtube-dl-exec');
+const playdl = require('play-dl');
 const { MusicQueue, Song } = require('../utils/MusicQueue');
 const queues = require('../utils/queues');
 
@@ -49,36 +49,38 @@ module.exports = {
       }
     }
 
-    if (!queue.currentSong) {
-      await queue.showLoading();
-    }
+    if (!queue.currentSong) await queue.showLoading();
 
-    let videoInfo;
+    let song;
     try {
-      const raw = await youtubedl(isUrl ? query : `ytsearch1:${query}`, {
-        dumpSingleJson: true,
-        noWarnings: true,
-        quiet: true,
-        ...(isUrl ? { noPlaylist: true } : {}),
-      });
-      videoInfo = raw.entries?.[0] ?? raw;
+      if (isUrl) {
+        const info = await playdl.video_info(query);
+        const d = info.video_details;
+        song = new Song({
+          title: d.title ?? '제목 없음',
+          url: d.url,
+          duration: d.durationInSec,
+          thumbnail: d.thumbnails?.[0]?.url ?? null,
+          requestedBy: `<@${interaction.user.id}>`,
+          channelName: d.channel?.name ?? '알 수 없음',
+        });
+      } else {
+        const results = await playdl.search(query, { limit: 1, source: { youtube: 'video' } });
+        if (!results?.length) return interaction.editReply('🔍 검색 결과가 없어요!');
+        const pick = results[0];
+        song = new Song({
+          title: pick.title ?? '제목 없음',
+          url: pick.url,
+          duration: pick.durationInSec,
+          thumbnail: pick.thumbnails?.[0]?.url ?? null,
+          requestedBy: `<@${interaction.user.id}>`,
+          channelName: pick.channel?.name ?? '알 수 없음',
+        });
+      }
     } catch (err) {
       console.error('[Lyric] 검색 오류:', err.message);
       return interaction.editReply('❌ 노래 검색 중 오류가 발생했어요.');
     }
-
-    if (!videoInfo) return interaction.editReply('🔍 검색 결과가 없어요!');
-
-    const song = new Song({
-      title: videoInfo.title ?? '제목 없음',
-      url: videoInfo.id
-        ? `https://www.youtube.com/watch?v=${videoInfo.id}`
-        : (videoInfo.webpage_url ?? videoInfo.url),
-      duration: videoInfo.duration,
-      thumbnail: videoInfo.thumbnail ?? null,
-      requestedBy: `<@${interaction.user.id}>`,
-      channelName: videoInfo.uploader ?? videoInfo.channel ?? '알 수 없음',
-    });
 
     await queue.addSong(song);
 

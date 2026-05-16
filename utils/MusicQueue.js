@@ -3,12 +3,10 @@ const {
   createAudioResource,
   AudioPlayerStatus,
   VoiceConnectionStatus,
-  StreamType,
   entersState,
   joinVoiceChannel,
   getVoiceConnection,
 } = require('@discordjs/voice');
-const youtubedl = require('youtube-dl-exec');
 const playdl = require('play-dl');
 const {
   EmbedBuilder,
@@ -299,14 +297,8 @@ class MusicQueue {
     try {
       await this.showLoading();
 
-      const ytProcess = youtubedl.exec(
-        this.currentSong.url,
-        { output: '-', quiet: true, format: '251/bestaudio[acodec=opus]', noPlaylist: true },
-        { stdio: ['ignore', 'pipe', 'ignore'] },
-      );
-      ytProcess.stdout.on('error', () => {});
-
-      const resource = createAudioResource(ytProcess.stdout, { inputType: StreamType.WebmOpus, inlineVolume: true });
+      const streamInfo = await playdl.stream(this.currentSong.url, { quality: 2 });
+      const resource = createAudioResource(streamInfo.stream, { inputType: streamInfo.type, inlineVolume: true });
       resource.volume?.setVolume(this.volume / 100);
       this._resource = resource;
       this.player.play(resource);
