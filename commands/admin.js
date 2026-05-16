@@ -31,6 +31,14 @@ module.exports = {
     )
     .addSubcommand((sub) =>
       sub.setName('목록').setDescription('등록된 관리자 목록을 확인해요. (관리자 전용)'),
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName('삭제')
+        .setDescription('등록된 관리자를 해제해요. (관리자 전용)')
+        .addUserOption((opt) =>
+          opt.setName('대상').setDescription('해제할 유저를 선택해주세요.').setRequired(true),
+        ),
     ),
 
   async execute(interaction) {
@@ -125,6 +133,36 @@ module.exports = {
             .setColor(0x9B59B6)
             .setTitle('📋 관리자 목록')
             .setDescription(list.slice(0, 4096)),
+        ],
+      });
+    }
+
+    if (sub === '삭제') {
+      if (!isAdmin) return interaction.editReply({ content: '❌ 서버 관리자만 사용할 수 있는 명령어에요!' });
+      const targetUser = interaction.options.getUser('대상');
+      if (!isRegistered(targetUser.id)) {
+        return interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(0xF39C12)
+              .setTitle('등록되지 않은 계정이에요!')
+              .setDescription(`<@${targetUser.id}>님은 등록된 관리자가 아니에요.`),
+          ],
+        });
+      }
+      unregisterUser(targetUser.id);
+      const codes = loadCodes();
+      const entry = codes.find((c) => c.usedBy?.id === targetUser.id);
+      if (entry) {
+        entry.usedBy = null;
+        saveCodes(codes);
+      }
+      return interaction.editReply({
+        embeds: [
+          new EmbedBuilder()
+            .setColor(0x2ECC71)
+            .setTitle('✅ 관리자 해제 완료')
+            .setDescription(`<@${targetUser.id}>님의 관리자 등록이 해제되었어요.`),
         ],
       });
     }
