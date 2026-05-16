@@ -20,20 +20,17 @@ const GUILD_IDS = process.env.GUILD_IDS
 
 (async () => {
   try {
-    // 전역 등록 (최대 1시간)
-    const globalData = await rest.put(
-      Routes.applicationCommands(process.env.CLIENT_ID),
-      { body: commands },
-    );
-    console.log(`[Lyric] 전역 ${globalData.length}개 등록 완료 (최대 1시간 소요)`);
+    // 전역 커맨드 전부 삭제 (중복 방지)
+    await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: [] });
+    console.log('[Lyric] 전역 커맨드 초기화 완료');
 
     // 길드 즉시 등록
     for (const guildId of GUILD_IDS) {
-      await rest.put(
+      const guildData = await rest.put(
         Routes.applicationGuildCommands(process.env.CLIENT_ID, guildId),
         { body: commands },
       );
-      console.log(`[Lyric] 길드 ${guildId} 즉시 등록 완료`);
+      console.log(`[Lyric] 길드 ${guildId} ${guildData.length}개 즉시 등록 완료`);
     }
   } catch (err) {
     console.error('[Lyric] 커맨드 등록 실패:', err);
