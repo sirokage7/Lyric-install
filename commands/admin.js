@@ -21,6 +21,9 @@ module.exports = {
         .setDescription('발급받은 관리자 코드를 등록해요.')
         .addStringOption((opt) =>
           opt.setName('코드').setDescription('발급받은 코드를 입력해주세요.').setRequired(true),
+        )
+        .addUserOption((opt) =>
+          opt.setName('적용할대상').setDescription('코드를 적용할 유저를 선택해주세요. (미선택시 본인)').setRequired(false),
         ),
     )
     .addSubcommand((sub) =>
@@ -50,13 +53,15 @@ module.exports = {
 
     if (sub === '코드') {
       const inputCode = interaction.options.getString('코드').trim().toUpperCase();
-      if (isRegistered(interaction.user.id)) {
+      const targetUser = interaction.options.getUser('적용할대상') ?? interaction.user;
+
+      if (isRegistered(targetUser.id)) {
         return interaction.editReply({
           embeds: [
             new EmbedBuilder()
               .setColor(0xF39C12)
               .setTitle('이미 등록된 계정이에요!')
-              .setDescription('이미 관리자 코드가 등록되어 있어요.'),
+              .setDescription(`<@${targetUser.id}>님은 이미 관리자 코드가 등록되어 있어요.`),
           ],
         });
       }
@@ -72,13 +77,13 @@ module.exports = {
           ],
         });
       }
-      registerUser(interaction.user.id);
+      registerUser(targetUser.id);
       return interaction.editReply({
         embeds: [
           new EmbedBuilder()
             .setColor(0x2ECC71)
             .setTitle('✅ 코드 등록 완료')
-            .setDescription('관리자 코드가 등록되었어요!\n이제 관리자 전용 기능을 사용할 수 있어요.'),
+            .setDescription(`<@${targetUser.id}>님에게 관리자 코드가 등록되었어요!\n이제 관리자 전용 기능을 사용할 수 있어요.`),
         ],
       });
     }
