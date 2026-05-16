@@ -34,6 +34,25 @@ module.exports = {
     const query = interaction.options.getString('제목_또는_링크');
     const isUrl = /^https?:\/\//.test(query);
 
+    const guildId = interaction.guildId;
+    if (!queues.has(guildId)) queues.set(guildId, new MusicQueue(guildId));
+
+    const queue = queues.get(guildId);
+    queue.textChannel = interaction.channel;
+
+    if (!queue.connection) {
+      try {
+        await queue.join(voiceChannel);
+      } catch (err) {
+        queues.delete(guildId);
+        return interaction.editReply('❌ 음성 채널 연결에 실패했어요.');
+      }
+    }
+
+    if (!queue.currentSong) {
+      await queue.showLoading();
+    }
+
     let videoInfo;
     try {
       const raw = await youtubedl(isUrl ? query : `ytsearch1:${query}`, {
@@ -60,21 +79,6 @@ module.exports = {
       requestedBy: `<@${interaction.user.id}>`,
       channelName: videoInfo.uploader ?? videoInfo.channel ?? '알 수 없음',
     });
-
-    const guildId = interaction.guildId;
-    if (!queues.has(guildId)) queues.set(guildId, new MusicQueue(guildId));
-
-    const queue = queues.get(guildId);
-    queue.textChannel = interaction.channel;
-
-    if (!queue.connection) {
-      try {
-        await queue.join(voiceChannel);
-      } catch (err) {
-        queues.delete(guildId);
-        return interaction.editReply('❌ 음성 채널 연결에 실패했어요.');
-      }
-    }
 
     await queue.addSong(song);
 

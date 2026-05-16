@@ -178,6 +178,18 @@ class MusicQueue {
     }
   }
 
+  async showLoading() {
+    if (!this.textChannel) return;
+    const loadingEmbed = new EmbedBuilder().setColor(0x9B59B6).setDescription('패널 생성중...');
+    if (this.npMessage) {
+      await this.npMessage.edit({ embeds: [loadingEmbed], components: [] }).catch(async () => {
+        try { this.npMessage = await this.textChannel.send({ embeds: [loadingEmbed] }); } catch {}
+      });
+    } else {
+      try { this.npMessage = await this.textChannel.send({ embeds: [loadingEmbed] }); } catch {}
+    }
+  }
+
   async updateNowPlaying() {
     if (!this.npMessage || !this.currentSong) return;
     try {
@@ -285,12 +297,7 @@ class MusicQueue {
     this.currentSong = this.songs.shift();
 
     try {
-      if (this.textChannel) {
-        if (this.npMessage) this.npMessage.delete().catch(() => {});
-        this.npMessage = await this.textChannel.send({
-          embeds: [new EmbedBuilder().setColor(0x9B59B6).setDescription('패널 생성중...')],
-        });
-      }
+      await this.showLoading();
 
       const ytProcess = youtubedl.exec(
         this.currentSong.url,
