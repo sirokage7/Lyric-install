@@ -10,7 +10,7 @@ const {
 const queues = require('../utils/queues');
 const { formatDuration } = require('../utils/MusicQueue');
 
-// userId → { mode: null|'delete'|'swap', firstIdx: null|number, secondIdx: null|number }
+// userId → { mode: 'delete'|'swap', firstIdx: null|number, secondIdx: null|number }
 const editStates = new Map();
 
 function buildEmbed() {
@@ -27,23 +27,8 @@ function buildEmbed() {
 
 function buildSelectMenu(queue, state) {
   const menu = new StringSelectMenuBuilder().setCustomId('lyric_qm_select');
-
-  if (!state.mode) {
-    return new ActionRowBuilder().addComponents(
-      menu.setPlaceholder('편집 모드를 선택하세요').addOptions(
-        new StringSelectMenuOptionBuilder()
-          .setLabel('🗑️ 삭제모드')
-          .setValue('mode_delete')
-          .setDescription('대기열에서 선택된 곡을 제거합니다'),
-        new StringSelectMenuOptionBuilder()
-          .setLabel('🔀 스왑모드')
-          .setValue('mode_swap')
-          .setDescription('선택된 두 곡의 위치를 바꿉니다'),
-      ),
-    );
-  }
-
   const songs = queue?.songs ?? [];
+
   if (!songs.length) {
     return new ActionRowBuilder().addComponents(
       menu
@@ -105,7 +90,7 @@ module.exports = {
       return interaction.reply({ content: '❌ 현재 재생 중인 노래가 없어요!', ephemeral: true });
     }
 
-    const state = { mode: null, firstIdx: null, secondIdx: null };
+    const state = { mode: 'delete', firstIdx: null, secondIdx: null };
     editStates.set(interaction.user.id, state);
 
     return interaction.reply({
@@ -117,7 +102,7 @@ module.exports = {
 
   async handleInteraction(interaction) {
     const queue = queues.get(interaction.guildId);
-    const state = editStates.get(interaction.user.id) ?? { mode: null, firstIdx: null, secondIdx: null };
+    const state = editStates.get(interaction.user.id) ?? { mode: 'delete', firstIdx: null, secondIdx: null };
     editStates.set(interaction.user.id, state);
 
     await interaction.deferUpdate();
@@ -131,45 +116,31 @@ module.exports = {
         });
       }
 
-      if (value.startsWith('mode_')) {
-        state.mode = value === 'mode_delete' ? 'delete' : 'swap';
-        state.firstIdx = null;
-        state.secondIdx = null;
+      const idx = parseInt(value);
+      if (state.mode === 'delete') {
+        state.firstIdx = idx;
       } else {
-        const idx = parseInt(value);
-        if (state.mode === 'delete') {
+        if (state.firstIdx === null) {
           state.firstIdx = idx;
-        } else if (state.mode === 'swap') {
-          if (state.firstIdx === null) {
-            state.firstIdx = idx;
-          } else if (idx !== state.firstIdx) {
-            state.secondIdx = idx;
-          }
+        } else if (idx !== state.firstIdx) {
+          state.secondIdx = idx;
         }
       }
     } else if (interaction.isButton()) {
       if (interaction.customId === 'lyric_qm_trash') {
+        // 모드 토글
+        state.mode = state.mode === 'delete' ? 'swap' : 'delete';
+        state.firstIdx = null;
+        state.secondIdx = null;
+      } else if (interaction.customId === 'lyric_qm_confirm') {
         if (state.mode === 'delete' && queue && state.firstIdx !== null && state.firstIdx < queue.songs.length) {
           queue.songs.splice(state.firstIdx, 1);
           await queue.updateNowPlaying();
           state.firstIdx = null;
-        } else if (state.mode === 'swap' && queue && state.firstIdx !== null && state.secondIdx !== null) {
-          if (state.firstIdx < queue.songs.length && state.secondIdx < queue.songs.length) {
-            [queue.songs[state.firstIdx], queue.songs[state.secondIdx]] =
-              [queue.songs[state.secondIdx], queue.songs[state.firstIdx]];
-            await queue.updateNowPlaying();
-            state.firstIdx = null;
-            state.secondIdx = null;
-          }
-        }
-      } else if (interaction.customId === 'lyric_qm_confirm') {
-        if (
-          queue &&
-          state.mode === 'swap' &&
-          state.firstIdx !== null &&
-          state.secondIdx !== null &&
-          state.firstIdx < queue.songs.length &&
-          state.secondIdx < queue.songs.length
+        } else if (
+          state.mode === 'swap' && queue &&
+          state.firstIdx !== null && state.secondIdx !== null &&
+          state.firstIdx < queue.songs.length && state.secondIdx < queue.songs.length
         ) {
           [queue.songs[state.firstIdx], queue.songs[state.secondIdx]] =
             [queue.songs[state.secondIdx], queue.songs[state.firstIdx]];
