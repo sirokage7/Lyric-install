@@ -19,7 +19,7 @@ module.exports = {
   ],
 
   async execute(interaction) {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
 
     const voiceChannel = interaction.member?.voice?.channel;
     if (!voiceChannel) {
