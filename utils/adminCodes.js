@@ -25,7 +25,9 @@ function saveCodes(codes) {
 function loadUsers() {
   try {
     if (!fs.existsSync(usersPath)) return [];
-    return JSON.parse(fs.readFileSync(usersPath, 'utf8'));
+    const data = JSON.parse(fs.readFileSync(usersPath, 'utf8'));
+    // 구버전 호환 (string 배열 → object 배열)
+    return data.map((u) => typeof u === 'string' ? { id: u, name: '알 수 없음', issuedBy: null } : u);
   } catch { return []; }
 }
 
@@ -35,28 +37,23 @@ function saveUsers(users) {
 }
 
 function isRegistered(userId) {
-  return loadUsers().includes(userId);
+  return loadUsers().some((u) => u.id === userId);
 }
 
 function registerUser(userId, userName, code) {
   const users = loadUsers();
-  if (!users.includes(userId)) {
-    users.push(userId);
-    saveUsers(users);
-  }
-  if (code) {
+  if (!users.some((u) => u.id === userId)) {
     const codes = loadCodes();
     const entry = codes.find((c) => c.code === code);
-    if (entry) {
-      entry.usedBy = { id: userId, name: userName };
-      saveCodes(codes);
-    }
+    users.push({ id: userId, name: userName, issuedBy: entry?.issuedBy ?? null });
+    saveUsers(users);
+    // 일회용: 사용된 코드 삭제
+    saveCodes(codes.filter((c) => c.code !== code));
   }
 }
 
 function unregisterUser(userId) {
-  const users = loadUsers();
-  saveUsers(users.filter((id) => id !== userId));
+  saveUsers(loadUsers().filter((u) => u.id !== userId));
 }
 
 function generateCode() {

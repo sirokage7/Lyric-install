@@ -27,18 +27,10 @@ module.exports = {
         ),
     )
     .addSubcommand((sub) =>
-      sub.setName('코드삭제').setDescription('발급된 관리자 코드를 삭제해요. (관리자 전용)'),
-    )
-    .addSubcommand((sub) =>
       sub.setName('목록').setDescription('등록된 관리자 목록을 확인해요. (관리자 전용)'),
     )
     .addSubcommand((sub) =>
-      sub
-        .setName('삭제')
-        .setDescription('등록된 관리자를 해제해요. (관리자 전용)')
-        .addUserOption((opt) =>
-          opt.setName('대상').setDescription('해제할 유저를 선택해주세요.').setRequired(true),
-        ),
+      sub.setName('삭제').setDescription('등록된 관리자를 해제해요. (관리자 전용)'),
     ),
 
   async execute(interaction) {
@@ -54,7 +46,6 @@ module.exports = {
         code: newCode,
         issuedAt: new Date().toISOString(),
         issuedBy: { id: interaction.user.id, name: interaction.user.displayName ?? interaction.user.username },
-        usedBy: null,
       });
       saveCodes(codes);
       return interaction.editReply({
@@ -107,7 +98,6 @@ module.exports = {
     if (sub === '목록') {
       if (!isAdmin) return interaction.editReply({ content: '❌ 서버 관리자만 사용할 수 있는 명령어에요!' });
       const users = loadUsers();
-      const codes = loadCodes();
 
       if (!users.length) {
         return interaction.editReply({
@@ -120,11 +110,9 @@ module.exports = {
         });
       }
 
-      const list = users.map((userId) => {
-        const entry = codes.find((c) => c.usedBy?.id === userId);
-        const name = entry?.usedBy?.name ?? '알 수 없음';
-        const issuer = entry?.issuedBy?.name ?? '알 수 없음';
-        return `<@${userId}> (${name})\n발급자: ${issuer}`;
+      const list = users.map((u) => {
+        const issuer = u.issuedBy?.name ?? '알 수 없음';
+        return `<@${u.id}> (${u.name})\n발급자: ${issuer}`;
       }).join('\n\n');
 
       return interaction.editReply({
@@ -139,76 +127,46 @@ module.exports = {
 
     if (sub === '삭제') {
       if (!isAdmin) return interaction.editReply({ content: '❌ 서버 관리자만 사용할 수 있는 명령어에요!' });
-      const targetUser = interaction.options.getUser('대상');
-      if (!isRegistered(targetUser.id)) {
-        return interaction.editReply({
-          embeds: [
-            new EmbedBuilder()
-              .setColor(0xF39C12)
-              .setTitle('등록되지 않은 계정이에요!')
-              .setDescription(`<@${targetUser.id}>님은 등록된 관리자가 아니에요.`),
-          ],
-        });
-      }
-      unregisterUser(targetUser.id);
-      const codes = loadCodes();
-      const entry = codes.find((c) => c.usedBy?.id === targetUser.id);
-      if (entry) {
-        entry.usedBy = null;
-        saveCodes(codes);
-      }
-      return interaction.editReply({
-        embeds: [
-          new EmbedBuilder()
-            .setColor(0x2ECC71)
-            .setTitle('✅ 관리자 해제 완료')
-            .setDescription(`<@${targetUser.id}>님의 관리자 등록이 해제되었어요.`),
-        ],
-      });
-    }
+      const users = loadUsers();
 
-    if (sub === '코드삭제') {
-      if (!isAdmin) return interaction.editReply({ content: '❌ 서버 관리자만 사용할 수 있는 명령어에요!' });
-      const codes = loadCodes();
-      if (!codes.length) return interaction.editReply({ content: '❌ 삭제할 코드가 없어요.' });
+      if (!users.length) {
+        return interaction.editReply({ content: '❌ 등록된 관리자가 없어요.' });
+      }
+
       const menu = new StringSelectMenuBuilder()
-        .setCustomId('admin_code_delete')
-        .setPlaceholder('삭제할 코드를 선택해주세요')
+        .setCustomId('admin_user_delete')
+        .setPlaceholder('해제할 관리자를 선택해주세요')
         .addOptions(
-          codes.slice(0, 25).map((c) => {
-            const issuer = c.issuedBy?.name ?? '알 수 없음';
-            const used = c.usedBy?.name ?? '미등록';
-            return new StringSelectMenuOptionBuilder()
-              .setLabel(c.code)
-              .setValue(c.code)
-              .setDescription(`발급자: ${issuer} | 등록자: ${used}`.slice(0, 100));
-          }),
+          users.slice(0, 25).map((u) =>
+            new StringSelectMenuOptionBuilder()
+              .setLabel(u.name)
+              .setValue(u.id)
+              .setDescription(`발급자: ${u.issuedBy?.name ?? '알 수 없음'}`.slice(0, 100)),
+          ),
         );
+
       return interaction.editReply({
         embeds: [
           new EmbedBuilder()
             .setColor(0xE74C3C)
-            .setTitle('🗑️ 관리자 코드 삭제')
-            .setDescription('삭제할 코드를 선택해주세요.'),
+            .setTitle('🗑️ 관리자 해제')
+            .setDescription('해제할 관리자를 선택해주세요.'),
         ],
         components: [new ActionRowBuilder().addComponents(menu)],
       });
     }
   },
 
-  async handleDeleteSelect(interaction) {
+  async handleUserDeleteSelect(interaction) {
     await interaction.deferUpdate();
-    const codeToDelete = interaction.values[0];
-    const codes = loadCodes();
-    const entry = codes.find((c) => c.code === codeToDelete);
-    if (entry?.usedBy?.id) unregisterUser(entry.usedBy.id);
-    saveCodes(codes.filter((c) => c.code !== codeToDelete));
+    const userId = interaction.values[0];
+    unregisterUser(userId);
     return interaction.editReply({
       embeds: [
         new EmbedBuilder()
           .setColor(0x2ECC71)
-          .setTitle('✅ 코드 삭제 완료')
-          .setDescription(`코드 \`${codeToDelete}\` 가 삭제되었어요.`),
+          .setTitle('✅ 관리자 해제 완료')
+          .setDescription(`<@${userId}>님의 관리자 등록이 해제되었어요.`),
       ],
       components: [],
     });
