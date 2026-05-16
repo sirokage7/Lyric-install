@@ -1,4 +1,4 @@
-const { Client, Collection, GatewayIntentBits, ActivityType } = require('discord.js');
+const { Client, Collection, GatewayIntentBits, ActivityType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
 const { joinVoiceChannel } = require('@discordjs/voice');
 const fs = require('fs');
 const path = require('path');
@@ -40,10 +40,66 @@ client.on('interactionCreate', async (interaction) => {
       return interaction.reply({ content: '❌ 현재 재생 중인 노래가 없어요!', ephemeral: true });
     }
 
-    // 큐 보기는 ephemeral reply 필요 → deferUpdate 제외
+    // ephemeral reply 필요한 버튼들
     if (interaction.customId === 'lyric_queue') {
       await interaction.deferReply({ ephemeral: true });
       return interaction.editReply({ embeds: [queue.getQueueEmbed()] });
+    }
+
+    if (interaction.customId === 'lyric_lyrics') {
+      await interaction.deferReply({ ephemeral: true });
+      return interaction.editReply({
+        embeds: [
+          new EmbedBuilder()
+            .setColor(0x2ECC71)
+            .setTitle('가사 설정')
+            .setDescription('가사를 설정하는 UI에요! 아래의 리스트에서 사용할 가사를 선택해주세요!'),
+        ],
+        components: [
+          new ActionRowBuilder().addComponents(
+            new StringSelectMenuBuilder()
+              .setCustomId('lyric_lyrics_select')
+              .setPlaceholder('사용할 가사를 선택해주세요!')
+              .setDisabled(true)
+              .addOptions(new StringSelectMenuOptionBuilder().setLabel('개발중').setValue('_dev')),
+          ),
+        ],
+      });
+    }
+
+    if (interaction.customId === 'lyric_playlist') {
+      await interaction.deferReply({ ephemeral: true });
+      return interaction.editReply({
+        embeds: [
+          new EmbedBuilder()
+            .setColor(0x2ECC71)
+            .setTitle('플레이리스트 대시보드')
+            .setDescription('플레이리스트 관련 기능을 실행하는 대시보드에요!'),
+        ],
+        components: [
+          new ActionRowBuilder().addComponents(
+            new StringSelectMenuBuilder()
+              .setCustomId('lyric_pl_mine')
+              .setPlaceholder('내 플레이리스트')
+              .setDisabled(true)
+              .addOptions(new StringSelectMenuOptionBuilder().setLabel('개발중').setValue('_dev')),
+          ),
+          new ActionRowBuilder().addComponents(
+            new StringSelectMenuBuilder()
+              .setCustomId('lyric_pl_recommend')
+              .setPlaceholder('내가 추천한 플레이리스트')
+              .setDisabled(true)
+              .addOptions(new StringSelectMenuOptionBuilder().setLabel('개발중').setValue('_dev')),
+          ),
+          new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+              .setCustomId('lyric_pl_create')
+              .setLabel('플레이리스트 만들기')
+              .setStyle(ButtonStyle.Success)
+              .setDisabled(true),
+          ),
+        ],
+      });
     }
 
     await interaction.deferUpdate();

@@ -145,8 +145,8 @@ class MusicQueue {
         ButtonStyle.Secondary
       ).setDisabled(disabled),
       new ButtonBuilder().setCustomId('lyric_queue').setLabel('≡').setStyle(ButtonStyle.Secondary).setDisabled(disabled),
-      new ButtonBuilder().setCustomId('lyric_vol_down').setLabel('◄').setStyle(ButtonStyle.Secondary).setDisabled(disabled),
-      new ButtonBuilder().setCustomId('lyric_vol_up').setLabel('►').setStyle(ButtonStyle.Secondary).setDisabled(disabled),
+      new ButtonBuilder().setCustomId('lyric_lyrics').setEmoji('📄').setStyle(ButtonStyle.Secondary).setDisabled(disabled),
+      new ButtonBuilder().setCustomId('lyric_playlist').setEmoji('📋').setStyle(ButtonStyle.Secondary).setDisabled(disabled),
       new ButtonBuilder().setCustomId('lyric_star').setLabel('★').setStyle(ButtonStyle.Secondary).setDisabled(disabled),
     );
 
