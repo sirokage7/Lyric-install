@@ -19,9 +19,9 @@ function buildEmbed() {
     .setTitle('대기열 편집모드')
     .setDescription(
       '대기열 편집모드가 사용중인 경우, 노래 추가, 다음곡 재생 등의 기능을 사용할 수 없어요.\n' +
-      '🗑️ **삭제모드** - 대기열에서 선택된 곡을 제거합니다.\n' +
-      '🔀 **스왑모드** - 선택된 두 곡의 위치를 바꿉니다.\n' +
-      '디스코드 API의 한계로, 최근 25곡의 노래까지만 표시됩니다.'
+      '🗑️ 삭제모드 - 대기열에서 선택된 곡을 제거합니다.\n' +
+      '🔀 스왑모드 - 선택된 두 곡의 위치를 바꿉니다.\n' +
+      '디스코드 API의 한계로, 최근 25곡의 노래까지만 표시됩니다.',
     );
 }
 
@@ -39,7 +39,7 @@ function buildSelectMenu(queue, state) {
           .setLabel('🔀 스왑모드')
           .setValue('mode_swap')
           .setDescription('선택된 두 곡의 위치를 바꿉니다'),
-      )
+      ),
     );
   }
 
@@ -49,7 +49,7 @@ function buildSelectMenu(queue, state) {
       menu
         .setPlaceholder('대기열이 비어있어요')
         .setDisabled(true)
-        .addOptions(new StringSelectMenuOptionBuilder().setLabel('없음').setValue('_none'))
+        .addOptions(new StringSelectMenuOptionBuilder().setLabel('없음').setValue('_none')),
     );
   }
 
@@ -57,14 +57,14 @@ function buildSelectMenu(queue, state) {
   if (state.mode === 'delete') {
     placeholder = state.firstIdx !== null
       ? `삭제 선택됨: ${state.firstIdx + 1}번 곡`
-      : '현재 편집 모드 - 삭제모드';
+      : '현재 편집모드 – 삭제모드';
   } else {
     if (state.secondIdx !== null) {
       placeholder = `스왑: ${state.firstIdx + 1}번 ↔ ${state.secondIdx + 1}번`;
     } else if (state.firstIdx !== null) {
-      placeholder = `첫번째 선택됨 (${state.firstIdx + 1}번) - 두번째 곡을 선택하세요`;
+      placeholder = `첫번째 선택됨 (${state.firstIdx + 1}번) – 두번째 곡을 선택하세요`;
     } else {
-      placeholder = '현재 편집 모드 - 스왑모드';
+      placeholder = '현재 편집모드 – 스왑모드';
     }
   }
 
@@ -74,16 +74,23 @@ function buildSelectMenu(queue, state) {
         new StringSelectMenuOptionBuilder()
           .setLabel(`${i + 1}. ${s.title.slice(0, 95)}`)
           .setValue(`${i}`)
-          .setDescription(formatDuration(s.duration))
-      )
-    )
+          .setDescription(`${formatDuration(s.duration)} | ${s.channelName ?? '알 수 없음'}`.slice(0, 100)),
+      ),
+    ),
   );
 }
 
-function buildButtons() {
+function buildButtons(state) {
+  const isSwap = state.mode === 'swap';
   return new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('lyric_qm_trash').setEmoji('🗑️').setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId('lyric_qm_confirm').setEmoji('✅').setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId('lyric_qm_trash')
+      .setEmoji(isSwap ? '🔀' : '🗑️')
+      .setStyle(isSwap ? ButtonStyle.Primary : ButtonStyle.Danger),
+    new ButtonBuilder()
+      .setCustomId('lyric_qm_confirm')
+      .setEmoji('✅')
+      .setStyle(ButtonStyle.Success),
   );
 }
 
@@ -104,7 +111,7 @@ module.exports = {
     return interaction.reply({
       ephemeral: true,
       embeds: [buildEmbed()],
-      components: [buildSelectMenu(queue, state), buildButtons()],
+      components: [buildSelectMenu(queue, state), buildButtons(state)],
     });
   },
 
@@ -120,7 +127,7 @@ module.exports = {
       if (value === '_none') {
         return interaction.editReply({
           embeds: [buildEmbed()],
-          components: [buildSelectMenu(queue, state), buildButtons()],
+          components: [buildSelectMenu(queue, state), buildButtons(state)],
         });
       }
 
@@ -142,10 +149,18 @@ module.exports = {
       }
     } else if (interaction.isButton()) {
       if (interaction.customId === 'lyric_qm_trash') {
-        if (queue && state.mode === 'delete' && state.firstIdx !== null && state.firstIdx < queue.songs.length) {
+        if (state.mode === 'delete' && queue && state.firstIdx !== null && state.firstIdx < queue.songs.length) {
           queue.songs.splice(state.firstIdx, 1);
           await queue.updateNowPlaying();
           state.firstIdx = null;
+        } else if (state.mode === 'swap' && queue && state.firstIdx !== null && state.secondIdx !== null) {
+          if (state.firstIdx < queue.songs.length && state.secondIdx < queue.songs.length) {
+            [queue.songs[state.firstIdx], queue.songs[state.secondIdx]] =
+              [queue.songs[state.secondIdx], queue.songs[state.firstIdx]];
+            await queue.updateNowPlaying();
+            state.firstIdx = null;
+            state.secondIdx = null;
+          }
         }
       } else if (interaction.customId === 'lyric_qm_confirm') {
         if (
@@ -167,7 +182,7 @@ module.exports = {
 
     return interaction.editReply({
       embeds: [buildEmbed()],
-      components: [buildSelectMenu(queue, state), buildButtons()],
+      components: [buildSelectMenu(queue, state), buildButtons(state)],
     });
   },
 };
