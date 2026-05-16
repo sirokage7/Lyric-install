@@ -25,8 +25,7 @@ function formatDuration(sec) {
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);
   const s = sec % 60;
-  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-  return `${m}:${String(s).padStart(2, '0')}`;
+  return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
 class Song {
@@ -72,7 +71,7 @@ class MusicQueue {
   _buildWaitingEmbed() {
     return new EmbedBuilder()
       .setColor(0x9B59B6)
-      .setAuthor({ name: '🎵 Lyric | 재생 대기중...' })
+      .setTitle('🎵 Lyric | 재생 대기중...')
       .setDescription('새로운 음악이 추가되기를 기다리고 있어요!');
   }
 
@@ -84,7 +83,7 @@ class MusicQueue {
 
     return new EmbedBuilder()
       .setColor(0x9B59B6)
-      .setAuthor({ name: '🎵 Lyric | 음악 재생중...' })
+      .setTitle('🎵 Lyric | 음악 재생중...')
       .setDescription(`${trackMode}\n**[${song.title}](${song.url})**\n${'⠀'.repeat(60)}`)
       .addFields(
         { name: '노래 길이', value: formatDuration(song.duration), inline: true },
