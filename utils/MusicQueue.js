@@ -359,39 +359,10 @@ class MusicQueue {
     return this.loop;
   }
 
-  async shuffle() {
-    if (!this.currentSong) return;
-    this.songs = [];
-
-    try {
-      const query = this.currentSong.channelName !== '알 수 없음'
-        ? this.currentSong.channelName
-        : this.currentSong.title;
-
-      const results = await playdl.search(query, { limit: 40, source: { youtube: 'video' } });
-      const filtered = results.filter((r) =>
-        r.url !== this.currentSong.url &&
-        r.durationInSec >= 60 &&
-        r.durationInSec <= 720
-      );
-
-      for (let i = filtered.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
-      }
-
-      for (const video of filtered.slice(0, 20)) {
-        this.songs.push(new Song({
-          title: video.title ?? '제목 없음',
-          url: video.url,
-          duration: video.durationInSec,
-          thumbnail: video.thumbnails?.[0]?.url ?? null,
-          requestedBy: '🔀 셔플',
-          channelName: video.channel?.name ?? '알 수 없음',
-        }));
-      }
-    } catch (err) {
-      console.error('[Lyric] 셔플 오류:', err.message);
+  shuffle() {
+    for (let i = this.songs.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [this.songs[i], this.songs[j]] = [this.songs[j], this.songs[i]];
     }
   }
 

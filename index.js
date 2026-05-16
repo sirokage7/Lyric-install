@@ -119,7 +119,7 @@ client.on('interactionCreate', async (interaction) => {
         queue.skip();
         break;
       case 'lyric_shuffle':
-        await queue.shuffle();
+        queue.shuffle();
         await queue.updateNowPlaying();
         break;
       case 'lyric_loop':
