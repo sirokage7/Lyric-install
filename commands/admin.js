@@ -39,7 +39,12 @@ module.exports = {
       if (!isAdmin) return interaction.editReply({ content: '❌ 서버 관리자만 사용할 수 있는 명령어에요!' });
       const codes = loadCodes();
       const newCode = generateCode();
-      codes.push({ code: newCode, issuedAt: new Date().toISOString() });
+      codes.push({
+        code: newCode,
+        issuedAt: new Date().toISOString(),
+        issuedBy: { id: interaction.user.id, name: interaction.user.displayName ?? interaction.user.username },
+        usedBy: null,
+      });
       saveCodes(codes);
       return interaction.editReply({
         embeds: [
@@ -77,7 +82,7 @@ module.exports = {
           ],
         });
       }
-      registerUser(targetUser.id);
+      registerUser(targetUser.id, targetUser.displayName ?? targetUser.username, inputCode);
       return interaction.editReply({
         embeds: [
           new EmbedBuilder()
@@ -96,9 +101,14 @@ module.exports = {
         .setCustomId('admin_code_delete')
         .setPlaceholder('삭제할 코드를 선택해주세요')
         .addOptions(
-          codes.slice(0, 25).map((c) =>
-            new StringSelectMenuOptionBuilder().setLabel(c.code).setValue(c.code),
-          ),
+          codes.slice(0, 25).map((c) => {
+            const issuer = c.issuedBy?.name ?? '알 수 없음';
+            const used = c.usedBy?.name ?? '미등록';
+            return new StringSelectMenuOptionBuilder()
+              .setLabel(c.code)
+              .setValue(c.code)
+              .setDescription(`발급자: ${issuer} | 등록자: ${used}`.slice(0, 100));
+          }),
         );
       return interaction.editReply({
         embeds: [

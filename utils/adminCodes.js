@@ -38,11 +38,19 @@ function isRegistered(userId) {
   return loadUsers().includes(userId);
 }
 
-function registerUser(userId) {
+function registerUser(userId, userName, code) {
   const users = loadUsers();
   if (!users.includes(userId)) {
     users.push(userId);
     saveUsers(users);
+  }
+  if (code) {
+    const codes = loadCodes();
+    const entry = codes.find((c) => c.code === code);
+    if (entry) {
+      entry.usedBy = { id: userId, name: userName };
+      saveCodes(codes);
+    }
   }
 }
 
