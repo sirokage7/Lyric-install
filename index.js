@@ -33,6 +33,12 @@ client.on('interactionCreate', async (interaction) => {
     return queueManage.handleInteraction(interaction);
   }
 
+  // 관리자 코드 삭제 셀렉트 메뉴
+  if (interaction.isStringSelectMenu() && interaction.customId === 'admin_code_delete') {
+    const admin = require('./commands/admin');
+    return admin.handleDeleteSelect(interaction);
+  }
+
   // 버튼 인터랙션
   if (interaction.isButton()) {
     const queue = queues.get(interaction.guildId);
