@@ -1,4 +1,4 @@
-const { REST, Routes } = require('discord.js');
+const { Client, GatewayIntentBits, REST, Routes } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
@@ -16,13 +16,28 @@ const rest = new REST().setToken(process.env.DISCORD_TOKEN);
 
 (async () => {
   try {
-    console.log(`[Lyric] ${commands.length}개의 슬래시 커맨드 전역 등록 중...`);
-    const data = await rest.put(
-      Routes.applicationCommands(process.env.CLIENT_ID),
-      { body: commands },
-    );
-    console.log(`[Lyric] ${data.length}개 커맨드 전역 등록 완료! (반영까지 최대 1시간 소요)`);
+    // 전역 커맨드 초기화
+    console.log('[Lyric] 전역 커맨드 초기화 중...');
+    await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: [] });
+    console.log('[Lyric] 전역 커맨드 초기화 완료');
+
+    // 봇에 로그인해서 길드 목록 가져오기
+    const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+    await client.login(process.env.DISCORD_TOKEN);
+    await client.guilds.fetch();
+
+    const guilds = client.guilds.cache;
+    console.log(`[Lyric] ${guilds.size}개 서버에 ${commands.length}개 커맨드 등록 중...`);
+
+    for (const [guildId, guild] of guilds) {
+      await rest.put(Routes.applicationGuildCommands(process.env.CLIENT_ID, guildId), { body: commands });
+      console.log(`[Lyric] ✅ ${guild.name} (${guildId}) 등록 완료`);
+    }
+
+    console.log('[Lyric] 모든 서버 등록 완료! (즉시 반영)');
+    await client.destroy();
   } catch (err) {
     console.error('[Lyric] 커맨드 등록 실패:', err);
+    process.exit(1);
   }
 })();
