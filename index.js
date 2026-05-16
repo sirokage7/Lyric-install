@@ -105,9 +105,12 @@ client.on('interactionCreate', async (interaction) => {
     await interaction.deferUpdate();
 
     switch (interaction.customId) {
-      case 'lyric_stop':
+      case 'lyric_stop': {
+        const stopChannel = interaction.channel;
         queue.destroy();
+        await stopChannel.send({ content: `<@${interaction.user.id}>님이 플레이어를 종료하셨어요!` });
         break;
+      }
       case 'lyric_restart':
         queue.restart();
         break;
