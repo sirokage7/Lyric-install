@@ -23,12 +23,21 @@ client.once('clientReady', () => {
   client.user.setActivity('/play 로 음악을 틀어봐요', { type: ActivityType.Listening });
 });
 
+function isInBotChannel(interaction) {
+  const botChannelId = interaction.guild?.members?.me?.voice?.channelId;
+  const userChannelId = interaction.member?.voice?.channelId;
+  return botChannelId && userChannelId === botChannelId;
+}
+
 client.on('interactionCreate', async (interaction) => {
   // 대기열 관리 인터랙션
   if (
     (interaction.isButton() && ['lyric_qm_trash', 'lyric_qm_confirm'].includes(interaction.customId)) ||
     (interaction.isStringSelectMenu() && interaction.customId === 'lyric_qm_select')
   ) {
+    if (!isInBotChannel(interaction)) {
+      return interaction.reply({ content: '❌ 봇이 있는 음성 채널에 입장한 후 사용해주세요!', ephemeral: true });
+    }
     const queueManage = require('./commands/queue-manage');
     return queueManage.handleInteraction(interaction);
   }
@@ -41,6 +50,9 @@ client.on('interactionCreate', async (interaction) => {
 
   // 버튼 인터랙션
   if (interaction.isButton()) {
+    if (!isInBotChannel(interaction)) {
+      return interaction.reply({ content: '❌ 봇이 있는 음성 채널에 입장한 후 사용해주세요!', ephemeral: true });
+    }
     const queue = queues.get(interaction.guildId);
     if (!queue?.currentSong) {
       return interaction.reply({ content: '❌ 현재 재생 중인 노래가 없어요!', ephemeral: true });
@@ -146,6 +158,9 @@ client.on('interactionCreate', async (interaction) => {
 
   // 셀렉트 메뉴 인터랙션 (다음 곡 선택)
   if (interaction.isStringSelectMenu() && interaction.customId === 'lyric_queue_select') {
+    if (!isInBotChannel(interaction)) {
+      return interaction.reply({ content: '❌ 봇이 있는 음성 채널에 입장한 후 사용해주세요!', ephemeral: true });
+    }
     const queue = queues.get(interaction.guildId);
     if (!queue?.currentSong) {
       return interaction.reply({ content: '❌ 현재 재생 중인 노래가 없어요!', ephemeral: true });
