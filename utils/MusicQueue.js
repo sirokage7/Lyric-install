@@ -85,7 +85,7 @@ class MusicQueue {
     return new EmbedBuilder()
       .setColor(0x9B59B6)
       .setAuthor({ name: '🎵 Lyric | 음악 재생중...' })
-      .setDescription(`${trackMode}\n**[${song.title}](${song.url})**\n${'　'.repeat(22)}`)
+      .setDescription(`${trackMode}\n**[${song.title}](${song.url})**\n${'⠀'.repeat(40)}`)
       .addFields(
         { name: '노래 길이', value: formatDuration(song.duration), inline: true },
         { name: '대기중인 곡', value: `${this.songs.length}개`, inline: true },
