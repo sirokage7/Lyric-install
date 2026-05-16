@@ -36,7 +36,7 @@ client.on('interactionCreate', async (interaction) => {
     (interaction.isStringSelectMenu() && interaction.customId === 'lyric_qm_select')
   ) {
     if (!isInBotChannel(interaction)) {
-      return interaction.reply({ content: '❌ 봇이 있는 음성 채널에 입장한 후 사용해주세요!', ephemeral: true });
+      return interaction.reply({ content: '⁠(채팅방)방에 연결된 상태에서만 이 명령어를 사용할 수 있어요!', ephemeral: true });
     }
     const queueManage = require('./commands/queue-manage');
     return queueManage.handleInteraction(interaction);
@@ -51,7 +51,7 @@ client.on('interactionCreate', async (interaction) => {
   // 버튼 인터랙션
   if (interaction.isButton()) {
     if (!isInBotChannel(interaction)) {
-      return interaction.reply({ content: '❌ 봇이 있는 음성 채널에 입장한 후 사용해주세요!', ephemeral: true });
+      return interaction.reply({ content: '⁠(채팅방)방에 연결된 상태에서만 이 명령어를 사용할 수 있어요!', ephemeral: true });
     }
     const queue = queues.get(interaction.guildId);
     if (!queue?.currentSong) {
@@ -159,7 +159,7 @@ client.on('interactionCreate', async (interaction) => {
   // 셀렉트 메뉴 인터랙션 (다음 곡 선택)
   if (interaction.isStringSelectMenu() && interaction.customId === 'lyric_queue_select') {
     if (!isInBotChannel(interaction)) {
-      return interaction.reply({ content: '❌ 봇이 있는 음성 채널에 입장한 후 사용해주세요!', ephemeral: true });
+      return interaction.reply({ content: '⁠(채팅방)방에 연결된 상태에서만 이 명령어를 사용할 수 있어요!', ephemeral: true });
     }
     const queue = queues.get(interaction.guildId);
     if (!queue?.currentSong) {
