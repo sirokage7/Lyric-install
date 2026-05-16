@@ -6,7 +6,7 @@ const {
   StringSelectMenuOptionBuilder,
   PermissionFlagsBits,
 } = require('discord.js');
-const { loadCodes, saveCodes, generateCode, isRegistered, registerUser } = require('../utils/adminCodes');
+const { loadCodes, saveCodes, loadUsers, generateCode, isRegistered, registerUser } = require('../utils/adminCodes');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -28,6 +28,9 @@ module.exports = {
     )
     .addSubcommand((sub) =>
       sub.setName('코드삭제').setDescription('발급된 관리자 코드를 삭제해요. (관리자 전용)'),
+    )
+    .addSubcommand((sub) =>
+      sub.setName('목록').setDescription('등록된 관리자 목록을 확인해요. (관리자 전용)'),
     ),
 
   async execute(interaction) {
@@ -89,6 +92,39 @@ module.exports = {
             .setColor(0x2ECC71)
             .setTitle('✅ 코드 등록 완료')
             .setDescription(`<@${targetUser.id}>님에게 관리자 코드가 등록되었어요!\n이제 관리자 전용 기능을 사용할 수 있어요.`),
+        ],
+      });
+    }
+
+    if (sub === '목록') {
+      if (!isAdmin) return interaction.editReply({ content: '❌ 서버 관리자만 사용할 수 있는 명령어에요!' });
+      const users = loadUsers();
+      const codes = loadCodes();
+
+      if (!users.length) {
+        return interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(0x9B59B6)
+              .setTitle('📋 관리자 목록')
+              .setDescription('등록된 관리자가 없어요.'),
+          ],
+        });
+      }
+
+      const list = users.map((userId) => {
+        const entry = codes.find((c) => c.usedBy?.id === userId);
+        const name = entry?.usedBy?.name ?? '알 수 없음';
+        const issuer = entry?.issuedBy?.name ?? '알 수 없음';
+        return `<@${userId}> (${name})\n발급자: ${issuer}`;
+      }).join('\n\n');
+
+      return interaction.editReply({
+        embeds: [
+          new EmbedBuilder()
+            .setColor(0x9B59B6)
+            .setTitle('📋 관리자 목록')
+            .setDescription(list.slice(0, 4096)),
         ],
       });
     }
