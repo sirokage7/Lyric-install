@@ -6,7 +6,7 @@ const {
   StringSelectMenuOptionBuilder,
   PermissionFlagsBits,
 } = require('discord.js');
-const { loadCodes, saveCodes, loadUsers, generateCode, isRegistered, registerUser } = require('../utils/adminCodes');
+const { loadCodes, saveCodes, loadUsers, generateCode, isRegistered, registerUser, unregisterUser } = require('../utils/adminCodes');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -162,6 +162,8 @@ module.exports = {
     await interaction.deferUpdate();
     const codeToDelete = interaction.values[0];
     const codes = loadCodes();
+    const entry = codes.find((c) => c.code === codeToDelete);
+    if (entry?.usedBy?.id) unregisterUser(entry.usedBy.id);
     saveCodes(codes.filter((c) => c.code !== codeToDelete));
     return interaction.editReply({
       embeds: [

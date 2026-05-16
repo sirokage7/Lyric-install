@@ -54,8 +54,13 @@ function registerUser(userId, userName, code) {
   }
 }
 
+function unregisterUser(userId) {
+  const users = loadUsers();
+  saveUsers(users.filter((id) => id !== userId));
+}
+
 function generateCode() {
   return crypto.randomBytes(6).toString('hex').toUpperCase();
 }
 
-module.exports = { loadCodes, saveCodes, loadUsers, saveUsers, isRegistered, registerUser, generateCode };
+module.exports = { loadCodes, saveCodes, loadUsers, saveUsers, isRegistered, registerUser, unregisterUser, generateCode };
