@@ -13,8 +13,13 @@ const { formatDuration } = require('../utils/MusicQueue');
 // userId → { mode: 'delete'|'swap', firstIdx: null|number, secondIdx: null|number }
 const editStates = new Map();
 
-function buildEmbed() {
-  return new EmbedBuilder()
+function buildEmbed(queue) {
+  const songs = queue?.songs ?? [];
+  const songList = songs.slice(0, 25)
+    .map((s, i) => `**${i + 1}.** ${s.title}\n${formatDuration(s.duration)} | ${s.channelName ?? '알 수 없음'}`)
+    .join('\n');
+
+  const embed = new EmbedBuilder()
     .setColor(0x9B59B6)
     .setTitle('대기열 편집모드')
     .setDescription(
@@ -23,6 +28,10 @@ function buildEmbed() {
       '🔀 스왑모드 - 선택된 두 곡의 위치를 바꿉니다.\n' +
       '디스코드 API의 한계로, 최근 25곡의 노래까지만 표시됩니다.',
     );
+
+  if (songList) embed.addFields({ name: '대기열', value: songList.slice(0, 1024) });
+
+  return embed;
 }
 
 function buildSelectMenu(queue, state) {
@@ -95,9 +104,10 @@ module.exports = {
 
     return interaction.reply({
       ephemeral: true,
-      embeds: [buildEmbed()],
+      embeds: [buildEmbed(queue)],
       components: [buildSelectMenu(queue, state), buildButtons(state)],
     });
+
   },
 
   async handleInteraction(interaction) {
@@ -111,7 +121,7 @@ module.exports = {
       const value = interaction.values[0];
       if (value === '_none') {
         return interaction.editReply({
-          embeds: [buildEmbed()],
+          embeds: [buildEmbed(queue)],
           components: [buildSelectMenu(queue, state), buildButtons(state)],
         });
       }
@@ -152,7 +162,7 @@ module.exports = {
     }
 
     return interaction.editReply({
-      embeds: [buildEmbed()],
+      embeds: [buildEmbed(queue)],
       components: [buildSelectMenu(queue, state), buildButtons(state)],
     });
   },
