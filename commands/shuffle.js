@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const queues = require('../utils/queues');
+const { isRegistered } = require('../utils/adminCodes');
 
 module.exports = {
   data: [
@@ -7,6 +8,10 @@ module.exports = {
   ],
 
   async execute(interaction) {
+    if (!isRegistered(interaction.user.id)) {
+      return interaction.reply({ content: '❌ 관리자 코드가 등록되지 않은 계정이에요. `/관리자 코드`로 먼저 등록해주세요!', ephemeral: true });
+    }
+
     const queue = queues.get(interaction.guildId);
     if (!queue?.currentSong) {
       return interaction.reply({ content: '❌ 현재 재생 중인 노래가 없어요!', ephemeral: true });

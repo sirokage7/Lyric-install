@@ -2,6 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const playdl = require('play-dl');
 const { MusicQueue, Song } = require('../utils/MusicQueue');
 const queues = require('../utils/queues');
+const { isRegistered } = require('../utils/adminCodes');
 
 const playOption = (builder) =>
   builder
@@ -20,6 +21,10 @@ module.exports = {
 
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: true });
+
+    if (!isRegistered(interaction.user.id)) {
+      return interaction.editReply({ content: '❌ 관리자 코드가 등록되지 않은 계정이에요. `/관리자 코드`로 먼저 등록해주세요!' });
+    }
 
     const voiceChannel = interaction.member?.voice?.channel;
     if (!voiceChannel) return interaction.editReply('🔇 먼저 음성 채널에 입장해 주세요!');

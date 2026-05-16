@@ -9,6 +9,7 @@ const {
 } = require('discord.js');
 const queues = require('../utils/queues');
 const { formatDuration } = require('../utils/MusicQueue');
+const { isRegistered } = require('../utils/adminCodes');
 
 // userId → { mode: 'delete'|'swap', firstIdx: null|number, secondIdx: null|number }
 const editStates = new Map();
@@ -94,6 +95,10 @@ module.exports = {
   ],
 
   async execute(interaction) {
+    if (!isRegistered(interaction.user.id)) {
+      return interaction.reply({ content: '❌ 관리자 코드가 등록되지 않은 계정이에요. `/관리자 코드`로 먼저 등록해주세요!', ephemeral: true });
+    }
+
     const queue = queues.get(interaction.guildId);
     if (!queue?.currentSong) {
       return interaction.reply({ content: '❌ 현재 재생 중인 노래가 없어요!', ephemeral: true });
