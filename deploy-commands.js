@@ -14,14 +14,27 @@ for (const file of fs.readdirSync(commandsPath).filter((f) => f.endsWith('.js'))
 
 const rest = new REST().setToken(process.env.DISCORD_TOKEN);
 
+const GUILD_IDS = process.env.GUILD_IDS
+  ? process.env.GUILD_IDS.split(',').map((id) => id.trim())
+  : [];
+
 (async () => {
   try {
-    console.log(`[Lyric] ${commands.length}개의 슬래시 커맨드 전역 등록 중...`);
-    const data = await rest.put(
+    // 전역 등록 (최대 1시간)
+    const globalData = await rest.put(
       Routes.applicationCommands(process.env.CLIENT_ID),
       { body: commands },
     );
-    console.log(`[Lyric] ${data.length}개 커맨드 전역 등록 완료! (반영까지 최대 1시간 소요)`);
+    console.log(`[Lyric] 전역 ${globalData.length}개 등록 완료 (최대 1시간 소요)`);
+
+    // 길드 즉시 등록
+    for (const guildId of GUILD_IDS) {
+      await rest.put(
+        Routes.applicationGuildCommands(process.env.CLIENT_ID, guildId),
+        { body: commands },
+      );
+      console.log(`[Lyric] 길드 ${guildId} 즉시 등록 완료`);
+    }
   } catch (err) {
     console.error('[Lyric] 커맨드 등록 실패:', err);
   }
